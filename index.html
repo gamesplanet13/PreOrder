@@ -1,56 +1,132 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pickup Request Form</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Games Planet Prepaid Order Form</title>
   <style>
-    body { font-family: sans-serif; padding: 20px; background: #f5f5f5; }
-    h2 { text-align: center; }
-    form { max-width: 500px; margin: auto; background: white; padding: 20px; border-radius: 8px; }
-    input, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 4px; border: 1px solid #ccc; }
-    button { background: green; color: white; font-size: 16px; border: none; cursor: pointer; }
-    button:hover { background: darkgreen; }
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    h1 { color: #0070f3; font-size: 32px; margin-bottom: 5px; }
+    h2 { font-size: 20px; margin-top: 0; margin-bottom: 20px; }
+    input, select, textarea {
+      width: 90%; max-width: 400px; margin: 5px auto; padding: 10px;
+      font-size: 16px; display: block; border-radius: 5px; border: 1px solid #ccc;
+    }
+    button {
+      padding: 15px 25px; font-size: 18px; margin: 10px;
+      border: none; border-radius: 5px; cursor: pointer;
+    }
+    .pay-btn { background-color: #00b9f5; color: white; }
+    .order-btn { background-color: #28a745; color: white; }
+    img { width: 250px; margin: 20px 0; }
   </style>
 </head>
 <body>
 
-  <h2>Pickup Request Form</h2>
-  <form id="pickupForm">
-    <input type="text" id="name" placeholder="Full Name" required />
-    <textarea id="address" placeholder="Complete Pickup Address with Landmark" required></textarea>
-    <input type="text" id="city" placeholder="City" required />
-    <input type="text" id="state" placeholder="State" required />
-    <input type="text" id="pincode" placeholder="Pincode" required />
-    <input type="text" id="mobile" placeholder="Mobile Number" required />
-    <input type="text" id="altmobile" placeholder="Alternate Mobile Number (Optional)" />
-    <input type="text" id="product" placeholder="Product Name / Item for Pickup" required />
-    <input type="text" id="weight" placeholder="Approximate Weight (if known)" />
-    <label for="date">Preferred Pickup Date:</label>
-    <input type="date" id="date" required />
+  <h1>GAMES PLANET</h1>
+  <h2>Manual Order Page – Fill your details</h2>
 
-    <button type="button" onclick="sendWhatsApp()">Pickup Now</button>
-  </form>
+  <img src="https://i.imgur.com/YOURQRIMAGE.jpg" alt="Paytm QR" id="qr-image"/>
+
+  <input type="text" id="name" placeholder="Name" required>
+  <input type="text" id="mobile" placeholder="Mobile" required>
+  <input type="text" id="altmobile" placeholder="Alt Mobile">
+  <input type="email" id="email" placeholder="Email">
+  <textarea id="address" placeholder="Address"></textarea>
+  <input type="text" id="landmark" placeholder="Landmark">
+  <input type="text" id="pincode" placeholder="Pincode">
+  <input type="text" id="state" placeholder="State" readonly>
+  <input type="text" id="city" placeholder="District/City" readonly>
+  <input type="text" id="postoffice" placeholder="Post Office" readonly>
+
+  <div id="deliveryEstimate" style="font-size:16px; color:green; margin-top:5px;"></div>
+
+  <input type="text" id="product" placeholder="Product">
+
+  <button class="pay-btn" onclick="payNow()">Pay Now</button>
+  <button class="order-btn" onclick="sendOrder()">Submit Order Now</button>
 
   <script>
-    function sendWhatsApp() {
-      var name = document.getElementById("name").value;
-      var address = document.getElementById("address").value;
-      var city = document.getElementById("city").value;
-      var state = document.getElementById("state").value;
-      var pincode = document.getElementById("pincode").value;
-      var mobile = document.getElementById("mobile").value;
-      var altmobile = document.getElementById("altmobile").value;
-      var product = document.getElementById("product").value;
-      var weight = document.getElementById("weight").value;
-      var date = document.getElementById("date").value;
-
-      var msg = `🔴 Pickup Request 🔴%0A%0A📌 *Name:* ${name}%0A📍 *Address:* ${address}%0A🏙️ *City:* ${city}%0A🌐 *State:* ${state}%0A📮 *Pincode:* ${pincode}%0A📞 *Mobile:* ${mobile}%0A📞 *Alternate Mobile:* ${altmobile}%0A📦 *Product:* ${product}%0A⚖️ *Approx Weight:* ${weight}%0A🗓️ *Preferred Date:* ${date}%0A%0A✅ Please confirm pickup arrangements. Thank you.`;
-
-      var url = `https://wa.me/917983624797?text=${msg}`;
-      window.open(url, '_blank');
+  function getDeliveryEstimate(distance) {
+    if(distance <= 500){
+      return "2-4 days (sometimes 5-6 days)";
+    } else if(distance <= 1000){
+      return "4-6 days (sometimes 7-8 days)";
+    } else if(distance <= 1500){
+      return "5-7 days";
+    } else {
+      return "7-10 days";
     }
+  }
+
+  function getDistanceFromRampur(state) {
+    let distances = {
+      "Uttar Pradesh": 360,
+      "Delhi": 180,
+      "Maharashtra": 1500,
+      "West Bengal": 1350,
+      "Tamil Nadu": 2100
+    };
+    return distances[state] || 1800;
+  }
+
+  document.getElementById("pincode").addEventListener("input", function(){
+    let pincode = this.value;
+    if(pincode.length === 6){
+      fetch(`https://api.postalpincode.in/pincode/${pincode}`)
+      .then(response => response.json())
+      .then(data => {
+        if(data[0].Status === "Success"){
+          let postOffice = data[0].PostOffice[0];
+          let state = postOffice.State;
+          let district = postOffice.District;
+          let poName = postOffice.Name;
+
+          document.getElementById("state").value = state;
+          document.getElementById("city").value = district;
+          document.getElementById("postoffice").value = poName;
+
+          let distance = getDistanceFromRampur(state);
+          let estimate = getDeliveryEstimate(distance);
+          document.getElementById("deliveryEstimate").innerText = `Estimated Delivery: ${estimate}`;
+        } else {
+          document.getElementById("deliveryEstimate").innerText = "Invalid Pincode";
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        document.getElementById("deliveryEstimate").innerText = "Error fetching data";
+      });
+    }
+  });
+
+  function payNow(){
+    let amount = document.getElementById("amountpaid").value;
+    if(amount=='' || parseFloat(amount)<=0){
+      alert("Enter valid Amount Paid first");
+      return;
+    }
+    let upiUrl = `upi://pay?pa=paytmqr5hyx5o@ptys&pn=GamesPlanet&am=${amount}&cu=INR`;
+    window.location.href = upiUrl;
+  }
+
+  function sendOrder(){
+    let msg = `🟢 *Prepaid Order on WhatsApp*\\n\\n` +
+      `Name: ${document.getElementById("name").value}\\n` +
+      `Mobile: ${document.getElementById("mobile").value}\\n` +
+      `Alt Mobile: ${document.getElementById("altmobile").value}\\n` +
+      `Email: ${document.getElementById("email").value}\\n` +
+      `Address: ${document.getElementById("address").value}\\n` +
+      `Landmark: ${document.getElementById("landmark").value}\\n` +
+      `Pincode: ${document.getElementById("pincode").value}\\n` +
+      `State: ${document.getElementById("state").value}\\n` +
+      `District/City: ${document.getElementById("city").value}\\n` +
+      `Post office: ${document.getElementById("postoffice").value}\\n\\n` +
+      `Product: ${document.getElementById("product").value}`;
+
+    let encodedMsg = encodeURIComponent(msg);
+    window.location.href = `https://wa.me/917983624797?text=${encodedMsg}`;
+  }
   </script>
 
 </body>
