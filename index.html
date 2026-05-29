@@ -176,7 +176,7 @@ function formatDateRange(min,max){
 document.getElementById("pincode").addEventListener("input",function(){
   const pin=this.value.trim();
   if(pin.length===6){
-    fetch(`https://api.postalpincode.in/pincode/${pin}`)
+    fetch('https://api.postalpincode.in/pincode/{PINCODE}`)
     .then(r=>r.json()).then(data=>{
       if(data[0].Status==="Success"){
         const po=data[0].PostOffice[0];
