@@ -169,23 +169,18 @@ document.getElementById("deliveryEstimate");
 document.getElementById("pincode").addEventListener("input",function(){
   const pin=this.value.trim();
   if(pin.length===6){
-   const db1 = pincodeDB[pin];
-const db2 = pincodeLatLng[pin];
-
-const db1 = pincodeDB[pin];
+  const db1 = pincodeDB[pin];
 const db2 = pincodeLatLng[pin];
 
 if(db2){
 
    state.value = db2.state || "";
-
    city.value = db2.city || "";
 
 }
 else if(db1){
 
    state.value = db1.state || "";
-
    city.value = "";
 
 }
