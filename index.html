@@ -156,13 +156,32 @@ function formatDateRange(min,max){
 document.getElementById("pincode").addEventListener("input",function(){
   const pin=this.value.trim();
   if(pin.length===6){
-   const rec = pincodeDB[pin];
+   const db1 = pincodeDB[pin];
+const db2 = pincodeLatLng[pin];
 
-if(rec){
+if(db2){
 
-   state.value = rec.state;
+   state.value =
+   db2.state || "";
 
-   city.value = rec.state;
+   city.value =
+   db2.city ||
+   db2.district ||
+   "";
+
+}
+else if(db1){
+
+   state.value =
+   db1.state || "";
+
+   city.value = "";
+
+}
+else{
+
+   state.value="";
+   city.value="";
 
 }
 else{
