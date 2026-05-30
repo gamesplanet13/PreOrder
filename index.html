@@ -152,42 +152,46 @@ function formatDateRange(min,max){
   const opt={weekday:"long",day:"2-digit",month:"long",year:"numeric"};
   return `${s.toLocaleDateString("en-IN",opt)} – ${e.toLocaleDateString("en-IN",opt)}`;
 }
+const distance = document.getElementById("distance");
+const etaText = document.getElementById("etaText");
+const dateRange = document.getElementById("dateRange");
 
+const preEta = document.getElementById("preEta");
+const codEta = document.getElementById("codEta");
+const codRange = document.getElementById("codRange");
+
+const state = document.getElementById("state");
+const city = document.getElementById("city");
+
+const miniPreview = document.getElementById("miniPreview");
+const deliveryEstimate =
+document.getElementById("deliveryEstimate");
 document.getElementById("pincode").addEventListener("input",function(){
   const pin=this.value.trim();
   if(pin.length===6){
    const db1 = pincodeDB[pin];
 const db2 = pincodeLatLng[pin];
 
+const db1 = pincodeDB[pin];
+const db2 = pincodeLatLng[pin];
+
 if(db2){
 
-   state.value =
-   db2.state || "";
+   state.value = db2.state || "";
 
-   city.value =
-   db2.city ||
-   db2.district ||
-   "";
+   city.value = db2.city || "";
 
 }
 else if(db1){
 
-   state.value =
-   db1.state || "";
+   state.value = db1.state || "";
 
    city.value = "";
 
 }
 else{
 
-   state.value="";
-   city.value="";
-
-}
-else{
-
    state.value = "";
-
    city.value = "";
 
 }
