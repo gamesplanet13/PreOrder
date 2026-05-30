@@ -105,6 +105,13 @@ function orderID(){
 <script>
 let pincodeLatLng={};
 fetch('pincode_data.json').then(r=>r.json()).then(j=>pincodeLatLng=j);
+  let pincodeDB={};
+
+fetch("pincode_database.json")
+.then(r=>r.json())
+.then(data=>{
+   pincodeDB=data;
+});
 
 function haversine(lat1,lon1,lat2,lon2){
   const R=6371;
@@ -149,30 +156,22 @@ function formatDateRange(min,max){
 document.getElementById("pincode").addEventListener("input",function(){
   const pin=this.value.trim();
   if(pin.length===6){
-    fetch(`https://api.postalpincode.in/pincode/${pin}`)
-    .then(r=>r.json()).then(data=>{
-      if(data[0].Status==="Success"){
-        const po=data[0].PostOffice[0];
-        document.getElementById("state").value=po.State;
+   const rec = pincodeDB[pin];
 
-document.getElementById("city").value=po.District;
-        const poSelect =
-document.getElementById("postoffice");
+if(rec){
 
-poSelect.innerHTML =
-'<option value="">Select Post Office</option>';
+   state.value = rec.state;
 
-data[0].PostOffice.forEach(p=>{
+   city.value = rec.state;
 
- const opt=document.createElement("option");
+}
+else{
 
- opt.value=p.Name;
+   state.value = "";
 
- opt.textContent=p.Name;
+   city.value = "";
 
- poSelect.appendChild(opt);
-
-});
+}
 
         if(pincodeLatLng[pin]){
           const baseLat=28.8,baseLng=79.0;
