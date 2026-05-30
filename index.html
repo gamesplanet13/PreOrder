@@ -104,13 +104,13 @@ function orderID(){
 <!-- ===== ETA / PINCODE SYSTEM (UNCHANGED – TERA CODE) ===== -->
 <script>
 let pincodeLatLng={};
-let pincodeDB={};
+fetch('pincode_data.json').then(r=>r.json()).then(j=>pincodeLatLng=j);
+  let pincodeDB={};
 
-fetch('pincode_merged_final.json')
+fetch("pincode_database.json")
 .then(r=>r.json())
 .then(data=>{
    pincodeDB=data;
-   pincodeLatLng=data;
 });
 
 function haversine(lat1,lon1,lat2,lon2){
@@ -177,17 +177,34 @@ if(db2){
    state.value = db2.state || "";
    city.value = db2.city || "";
 
+   postoffice.innerHTML='<option value="">Select Post Office</option>';
+   (db2.postoffices || []).forEach(po=>{
+      const opt=document.createElement('option');
+      opt.value=po;
+      opt.textContent=po;
+      postoffice.appendChild(opt);
+   });
+
 }
 else if(db1){
 
    state.value = db1.state || "";
    city.value = "";
 
+   postoffice.innerHTML='<option value="">Select Post Office</option>';
+   (db1.postoffices || []).forEach(po=>{
+      const opt=document.createElement('option');
+      opt.value=po;
+      opt.textContent=po;
+      postoffice.appendChild(opt);
+   });
+
 }
 else{
 
    state.value = "";
    city.value = "";
+   postoffice.innerHTML='<option value="">Select Post Office</option>';
 
 }
 
@@ -210,7 +227,9 @@ else{
           codRange.textContent=formatDateRange(cod.min,cod.max);
 
           deliveryEstimate.innerText =
-`📏 Distance: ${d} km`;
+`📏 Distance: ${d} km
+⏳ Prepaid ETA: ${eta}
+📅 Prepaid Delivery: ${prepaidRange}`;
 
 miniPreview.style.display="block";
         }
