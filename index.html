@@ -191,36 +191,50 @@ else{
           codEta.textContent=`${cod.min}–${cod.max} days`;
           codRange.textContent=formatDateRange(cod.min,cod.max);
 
-          deliveryEstimate.innerText=
+          deliveryEstimate.innerText =
 `📏 Distance: ${d} km
 ⏳ Prepaid ETA: ${eta}
-📅 Prepaid Delivery: ${prepaidRange}
+📅 Prepaid Delivery: ${prepaidRange}`;
 
-          miniPreview.style.display="block";
+miniPreview.style.display="block";
         }
-        else{
+else{
 
   distance.value="N/A";
-
   etaText.value="5-8 days";
-
   dateRange.value="Standard Delivery";
 
   deliveryEstimate.innerText=
   "⏳ Standard ETA: 5-8 days";
 
   miniPreview.style.display="block";
+}
 
-        }
-      }
-    });
-  }
+}
 });
 </script>
 
 <script>
 /* ===== SEND WHATSAPP ===== */
 function sendOrder(){
+const name = document.getElementById("name");
+const mobile = document.getElementById("mobile");
+const altmobile = document.getElementById("altmobile");
+const email = document.getElementById("email");
+const address = document.getElementById("address");
+const landmark = document.getElementById("landmark");
+const pincode = document.getElementById("pincode");
+const state = document.getElementById("state");
+const city = document.getElementById("city");
+const postoffice = document.getElementById("postoffice");
+const manualProduct = document.getElementById("manualProduct");
+const manualVariant = document.getElementById("manualVariant");
+const qty = document.getElementById("qty");
+const distance = document.getElementById("distance");
+const etaText = document.getElementById("etaText");
+const dateRange = document.getElementById("dateRange");
+const codEta = document.getElementById("codEta");
+const codRange = document.getElementById("codRange");
   const type=document.querySelector('input[name="otype"]:checked').value;
   const q=parseInt(qty.value);
   const basePrice =
