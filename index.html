@@ -72,49 +72,22 @@ button{
 </div>
 
 <div class="box">
-<b>Product</b>
-<select id="product" onchange="setProduct()">
-<option value="">Select Product</option>
-<option data-price="3199" data-old="3899" data-variant="64GB">OG GameStick GD30 V3</option>
-<option data-price="4699" data-old="5499" data-variant="64GB">G90 Handheld</option>
-<option data-price="2499" data-old="4599" data-variant="64GB">R35S Handheld</option>
-<option data-price="2699" data-old="4999" data-variant="64GB">R36S Handheld</option>
-<option data-price="3299" data-old="4999" data-variant="64GB">R36 Ultra Handheld</option>
-<option data-price="799" data-old="900">SUP Classic</option>
-<option data-price="999" data-old="1199">SUP X7M</option>
-</select>
+<b>Product Details</b>
 
-<input id="manualProduct" placeholder="Manual product (No discount)">
-<div class="note">Manual product = NO DISCOUNT / NO BARGAIN</div>
+<input id="manualProduct" placeholder="Product Name">
+
+<input id="manualVariant" placeholder="Variant">
+
+<input id="manualPrice" type="number" placeholder="Price">
 </div>
 
 <input id="qty" type="number" min="1" value="1">
-
-<div class="box">
-<b>Coupon</b>
-<input id="coupon" placeholder="Coupon Code">
-<div class="note">Hint: freekagame</div>
-</div>
 
 <button onclick="sendOrder()">Submit Order on WhatsApp</button>
 
 </div>
 
 <script>
-/* ===== PRODUCT / PRICE ===== */
-let basePrice=0,discount=0,variant="";
-function setProduct(){
-  const o=product.options[product.selectedIndex];
-  if(!o.dataset.price) return;
-  basePrice=parseInt(o.dataset.price);
-  discount=parseInt(o.dataset.old)-basePrice;
-  variant=o.dataset.variant||"";
-}
-
-/* ===== COUPON ===== */
-function validCoupon(c){
-  return ["gpz2025","gpz2026"].includes(c.toLowerCase());
-}
 
 /* ===== ORDER ID ===== */
 function orderID(){
@@ -176,17 +149,30 @@ function formatDateRange(min,max){
 document.getElementById("pincode").addEventListener("input",function(){
   const pin=this.value.trim();
   if(pin.length===6){
-    fetch('https://api.postalpincode.in/pincode/{PINCODE}`)
+    fetch(`https://api.postalpincode.in/pincode/${pin}`)
     .then(r=>r.json()).then(data=>{
       if(data[0].Status==="Success"){
         const po=data[0].PostOffice[0];
-        state.value=po.State;
-        city.value=po.District;
-        postoffice.innerHTML='<option value="">Select Post Office</option>';
-        data[0].PostOffice.forEach(p=>{
-          const o=document.createElement("option");
-          o.value=o.text=p.Name;postoffice.appendChild(o);
-        });
+        document.getElementById("state").value=po.State;
+
+document.getElementById("city").value=po.District;
+        const poSelect =
+document.getElementById("postoffice");
+
+poSelect.innerHTML =
+'<option value="">Select Post Office</option>';
+
+data[0].PostOffice.forEach(p=>{
+
+ const opt=document.createElement("option");
+
+ opt.value=p.Name;
+
+ opt.textContent=p.Name;
+
+ poSelect.appendChild(opt);
+
+});
 
         if(pincodeLatLng[pin]){
           const baseLat=28.8,baseLng=79.0;
@@ -194,15 +180,15 @@ document.getElementById("pincode").addEventListener("input",function(){
           const d=Math.round(haversine(baseLat,baseLng,lat,lng));
           const eta=etaByDist(d);
           const pre=parseEta(eta);
-          const preRange=formatDateRange(pre.min,pre.max);
+          const prepaidRange=formatDateRange(pre.min,pre.max);
           const cod={min:pre.min+2,max:pre.max+3};
 
           distance.value=d+" km";
           etaText.value=eta;
-          dateRange.value=preRange;
+          dateRange.value=prepaidRange;
 
           preEta.textContent=eta;
-          preRange.textContent=preRange;
+          document.getElementById("preRange").textContent=prepaidRange;
           codEta.textContent=`${cod.min}–${cod.max} days`;
           codRange.textContent=formatDateRange(cod.min,cod.max);
 
@@ -212,6 +198,20 @@ document.getElementById("pincode").addEventListener("input",function(){
 📅 Prepaid Delivery: ${preRange}`;
 
           miniPreview.style.display="block";
+        }
+        else{
+
+  distance.value="N/A";
+
+  etaText.value="5-8 days";
+
+  dateRange.value="Standard Delivery";
+
+  deliveryEstimate.innerText=
+  "⏳ Standard ETA: 5-8 days";
+
+  miniPreview.style.display="block";
+
         }
       }
     });
@@ -224,9 +224,12 @@ document.getElementById("pincode").addEventListener("input",function(){
 function sendOrder(){
   const type=document.querySelector('input[name="otype"]:checked').value;
   const q=parseInt(qty.value);
-  const dsc= validCoupon(coupon.value)?discount:0;
+  const basePrice =
+parseInt(
+document.getElementById("manualPrice").value
+)||0;
 
-  const total=(basePrice-dsc)*q;
+const total=basePrice*q;
   const codCharge= type==="COD"?199*q:0;
   const adv= type==="COD"?500*q:0;
   const bal= total+codCharge-adv;
