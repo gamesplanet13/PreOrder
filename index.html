@@ -104,13 +104,13 @@ function orderID(){
 <!-- ===== ETA / PINCODE SYSTEM (UNCHANGED – TERA CODE) ===== -->
 <script>
 let pincodeLatLng={};
-fetch('pincode_data.json').then(r=>r.json()).then(j=>pincodeLatLng=j);
-  let pincodeDB={};
+let pincodeDB={};
 
-fetch("pincode_database.json")
+fetch('pincode_merged_final.json')
 .then(r=>r.json())
 .then(data=>{
    pincodeDB=data;
+   pincodeLatLng=data;
 });
 
 function haversine(lat1,lon1,lat2,lon2){
