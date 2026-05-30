@@ -195,7 +195,7 @@ data[0].PostOffice.forEach(p=>{
           deliveryEstimate.innerText=
 `📏 Distance: ${d} km
 ⏳ Prepaid ETA: ${eta}
-📅 Prepaid Delivery: ${preRange}`;
+📅 Prepaid Delivery: ${prepaidRange}
 
           miniPreview.style.display="block";
         }
@@ -231,8 +231,18 @@ document.getElementById("manualPrice").value
 
 const total=basePrice*q;
   const codCharge= type==="COD"?199*q:0;
-  const adv= type==="COD"?500*q:0;
-  const bal= total+codCharge-adv;
+  let adv=0;
+
+if(type==="COD"){
+   adv=parseInt(
+   prompt("Enter COD Advance Amount","500")
+   )||500;
+
+   if(adv<500) adv=500;
+
+   if(adv>total) adv=total;
+}
+  const bal= total-adv;
 
   const msg=`${type==="COD"?"🔴 COD":"🟢 Prepaid"} Order on WhatsApp
 
@@ -248,11 +258,19 @@ State: ${state.value}
 District/City: ${city.value}
 Post office: ${postoffice.value}
 
-Product: ${product.value||manualProduct.value}
-Variant: ${variant}
+${type==="COD"?
+`Product: ${manualProduct.value}
+Variant: ${manualVariant.value}
 Base Price: ₹${basePrice}
-Discount Applied: ₹${dsc}
-Amount Paid: ₹${type==="COD"?adv:total}
+Amount Paid: ₹${adv}
+Rest on Delivery: ₹${bal}`
+:
+`Product: ${manualProduct.value}
+Variant: ${manualVariant.value}
+Base Price: ₹${basePrice}
+Discount: ₹0
+Amount Paid: ₹${total}`
+}
 ${type==="COD"?"Rest on Delivery: ₹"+bal:""}
 
 📏 Distance: ${distance.value}
