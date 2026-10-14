@@ -209,7 +209,7 @@ Courier Company: ${val("courier")}
 📏 Distance: ${b.dataset.distance||"N/A"}
 ⏳ ${type()} Order ETA: ${cod?(b.dataset.codEta||"7–11 days"):(b.dataset.preEta||"5–8 days")}
 📅 Estimated Delivery: ${cod?(b.dataset.codRange||"Standard Delivery"):(b.dataset.preRange||"Standard Delivery")}`;
-  location.href="https://wa.me/"+SHOP.whatsapp+"?text="+encodeURIComponent(msg);
+  GPOrderRecords.send(msg,{items:[{name:val("product"),product:val("product"),variant:val("variant"),quantity:qty,unitPrice:c.productAmount/qty,lineTotal:c.productAmount,unitWeight:c.weight*1000/qty,lineWeight:c.weight*1000,dimensions:[]}],productTotal:c.productAmount,courierCharge:c.courierCharge,grandTotal:c.total,advanceAmount:c.advance,restAmount:c.rest,paymentMode:cod?"cod":"prepaid",gstInvoiceIncluded:false,delivery:{distance:b.dataset.distance,eta:cod?b.dataset.codEta:b.dataset.preEta,estimatedDelivery:cod?b.dataset.codRange:b.dataset.preRange}});
 }
 $("pincode").addEventListener("input",applyPincode);
 $("postofficeSelect").addEventListener("change",()=>{if(val("postofficeSelect"))$("postofficeManual").value=val("postofficeSelect")});
@@ -219,5 +219,5 @@ $("courier").addEventListener("change",()=>{$("courier").dataset.lastPrepaid=val
 $("submitButton").addEventListener("click",submitOrder);
 updatePayment();
 </script>
-</body>
+<script src="https://gamesplanet13.github.io/arcade-accessories-/orders-config.js"></script><script src="order-records.js"></script></body>
 </html>
