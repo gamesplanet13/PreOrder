@@ -42,7 +42,7 @@ button:hover{filter:brightness(.96)}
       <input id="altmobile" inputmode="tel" placeholder="Alt Mobile">
       <input id="email" type="email" placeholder="Email">
     </div>
-    <textarea id="address" placeholder="Full Address *"></textarea><input id="house" placeholder="House number (optional; blank = Rural)"><label for="areaType">Delivery Area</label><select id="areaType"><option value="auto">Auto (address)</option><option value="rural">Rural</option><option value="urban">Urban (requires house number)</option></select><div id="ruralNote" class="note">Rural: prepaid only, Post Office ₹100 or Speed Post ₹200.</div>
+    <textarea id="address" placeholder="Full Address *"></textarea><input id="house" placeholder="House number (optional; blank = Rural)"><label for="areaType">Delivery Area</label><select id="areaType"><option value="auto">Auto (address)</option><option value="rural">Rural</option><option value="urban">Urban (requires house number)</option></select><div id="ruralNote" class="note">Rural Prepaid: 0–499g Post Office ₹100 / Speed Post ₹200; 500g–1kg ₹150 / ₹300. Above 1kg: manual quote.</div>
     <input id="landmark" placeholder="Landmark">
   </section>
 
@@ -80,7 +80,7 @@ button:hover{filter:brightness(.96)}
       <option>Trackon.in</option><option>ShreeMaruti.com</option><option>DTDC.in</option>
       <option>Blue Dart</option><option>Ecom</option><option>Delhivery</option>
     </select>
-    <input id="weight" type="number" min="0" step="0.01" value="0" placeholder="Chargeable Weight in KG (COD)" disabled>
+    <input id="weight" type="number" min="0" step="0.001" value="0" placeholder="Packed weight in KG (postal/COD)" disabled>
     <div id="paymentNote" class="note"></div>
     <div id="paymentPreview"></div>
   </section>
@@ -153,10 +153,16 @@ function applyPincode(){
 }
 function type(){return document.querySelector('input[name="orderType"]:checked').value}
 function gpRural(){let house=document.getElementById('house').value.trim(),a=document.getElementById('areaType').value;if(!house||a==='rural')return true;if(a==='urban')return false;return /village|rural|gaon|गांव|गाँव/i.test(document.getElementById('address').value)}
-function gpPostage(){return gpRural()?(document.getElementById('courier').value==='Speed Post'?200:100):0}
+function gpPostage(){
+  if(!gpRural())return 0;
+  const grams=Math.round(Number(document.getElementById('weight').value)*1000);
+  if(!Number.isFinite(grams)||grams<=0||grams>1000)return null;
+  const base=grams>=500?150:100;
+  return document.getElementById('courier').value==='Speed Post'?base*2:base;
+}
 function calculation(){
   const productAmount=Math.max(0,Number(val("amount"))||0),weight=Math.max(0,Number(val("weight"))||0);
-  const kg=type()==="COD"&&weight>0?Math.ceil(weight):0,courierCharge=type()==="COD"?kg*COD_RATE:0,postalCharge=type()==="COD"?0:gpPostage(),total=productAmount+courierCharge+postalCharge;
+  const kg=type()==="COD"&&weight>0?Math.ceil(weight):0,courierCharge=type()==="COD"?kg*COD_RATE:0,postalCharge=type()==="COD"?0:gpPostage(),total=productAmount+courierCharge+(postalCharge??0);
   return{productAmount,weight,kg,courierCharge,postalCharge,total,advance:type()==="COD"?COD_ADVANCE:total,rest:type()==="COD"?Math.max(0,total-COD_ADVANCE):0};
 }
 function updateDelivery(){
@@ -166,7 +172,7 @@ function updateDelivery(){
 }
 function updatePayment(){
   const rural=gpRural(),codInput=document.querySelector('input[name="orderType"][value="COD"]');codInput.disabled=rural;codInput.parentElement.style.display=rural?"none":"";if(rural&&codInput.checked)document.querySelector('input[name="orderType"][value="Prepaid"]').checked=true;
-  const c=calculation(),cod=type()==="COD";$("ruralNote").textContent=rural?"Rural: only prepaid Post Office ₹100 / Speed Post ₹200; COD unavailable.":"Urban: standard couriers; COD only through Delhivery."; $("weight").disabled=!cod;
+  const c=calculation(),cod=type()==="COD";$("ruralNote").textContent=rural?"Rural: prepaid only. 0–499g ₹100/₹200; 500g–1kg ₹150/₹300 (Post Office / Speed Post). Above 1kg: manual quote.":"Urban: standard couriers; COD only through Delhivery."; $("weight").disabled=!cod&&!rural;
   if(cod){
     $("courier").innerHTML='<option value="Delhivery COD">Delhivery COD</option>';$("courier").disabled=true;
     $("paymentNote").textContent="COD में ₹500 fixed advance और ₹299 प्रति chargeable KG courier लगेगा। Weight अगले पूरे KG में round होगा।";
@@ -174,8 +180,8 @@ function updatePayment(){
   }else{
     const selected=$("courier").dataset.lastPrepaid||"Trackon.in";$("courier").disabled=false;
     $("courier").innerHTML=(rural?["Post Office","Speed Post"]:["Trackon.in","ShreeMaruti.com","DTDC.in","Blue Dart","Ecom","Delhivery"]).map(x=>'<option'+(x===selected?' selected':'')+'>'+x+'</option>').join("");
-    $("paymentNote").textContent=rural?"Prepaid total includes selected Post Office / Speed Post shipping charges.":"Urban prepaid: entered main product amount is payable, subject to courier confirmation.";
-    $("paymentPreview").innerHTML=(rural?"Postal Charges: "+money(c.postalCharge)+"<br>":"")+"Amount Paid: <b>"+money(c.total)+"</b>";
+    $("paymentNote").textContent=rural?"Rural postage calculated from packed parcel weight in KG; above 1kg requires manual quote.":"Urban prepaid: entered main product amount is payable, subject to courier confirmation.";
+    $("paymentPreview").innerHTML=(rural?(c.postalCharge===null?"Postal Charges: <b>Enter packed weight (max 1kg) / manual quote required</b><br>":"Packed Weight: "+(c.weight*1000).toFixed(0)+"g<br>Postal Charges: <b>"+money(c.postalCharge)+"</b><br>"):"")+"Amount Paid: <b>"+(c.postalCharge===null?"Pending postal quote":money(c.total))+"</b>";
   }
   updateDelivery();
 }
@@ -185,6 +191,7 @@ function submitOrder(){
   if(!val("name")||!val("mobile")||!val("address")||pin.length!==6||!val("state")||!val("city")||!po||!val("product")||c.productAmount<=0){
     alert("Name, Mobile, Address, valid Pincode, State, City, Post Office, Product और Main Amount भरें।");return;
   }
+  if(gpRural()&&(c.weight<=0||c.weight>1||c.postalCharge===null)){alert("Rural parcel packed weight is required up to 1kg. Above 1kg, confirm rate with Games Planet.");return}
   if(cod&&c.weight<=0){alert("COD के लिए chargeable weight KG में भरें।");return}
   if(cod&&c.productAmount<1300){alert("COD minimum product amount is ₹1,300.");return}
   if(cod&&c.total<COD_ADVANCE){alert("COD Grand Total कम से कम ₹500 होना चाहिए।");return}
