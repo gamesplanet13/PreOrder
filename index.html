@@ -166,7 +166,7 @@ function updateDelivery(){
 }
 function updatePayment(){
   const rural=gpRural(),codInput=document.querySelector('input[name="orderType"][value="COD"]');codInput.disabled=rural;codInput.parentElement.style.display=rural?"none":"";if(rural&&codInput.checked)document.querySelector('input[name="orderType"][value="Prepaid"]').checked=true;
-  const c=calculation(),cod=type()==="COD";$("weight").disabled=!cod;
+  const c=calculation(),cod=type()==="COD";$("ruralNote").textContent=rural?"Rural: only prepaid Post Office ₹100 / Speed Post ₹200; COD unavailable.":"Urban: standard couriers; COD only through Delhivery."; $("weight").disabled=!cod;
   if(cod){
     $("courier").innerHTML='<option value="Delhivery COD">Delhivery COD</option>';$("courier").disabled=true;
     $("paymentNote").textContent="COD में ₹500 fixed advance और ₹299 प्रति chargeable KG courier लगेगा। Weight अगले पूरे KG में round होगा।";
@@ -174,7 +174,7 @@ function updatePayment(){
   }else{
     const selected=$("courier").dataset.lastPrepaid||"Trackon.in";$("courier").disabled=false;
     $("courier").innerHTML=(rural?["Post Office","Speed Post"]:["Trackon.in","ShreeMaruti.com","DTDC.in","Blue Dart","Ecom","Delhivery"]).map(x=>'<option'+(x===selected?' selected':'')+'>'+x+'</option>').join("");
-    $("paymentNote").textContent="Prepaid में entered Main / Product Amount ही Amount Paid रहेगा।";
+    $("paymentNote").textContent=rural?"Prepaid total includes selected Post Office / Speed Post shipping charges.":"Urban prepaid: entered main product amount is payable, subject to courier confirmation.";
     $("paymentPreview").innerHTML=(rural?"Postal Charges: "+money(c.postalCharge)+"<br>":"")+"Amount Paid: <b>"+money(c.total)+"</b>";
   }
   updateDelivery();
@@ -186,6 +186,7 @@ function submitOrder(){
     alert("Name, Mobile, Address, valid Pincode, State, City, Post Office, Product और Main Amount भरें।");return;
   }
   if(cod&&c.weight<=0){alert("COD के लिए chargeable weight KG में भरें।");return}
+  if(cod&&c.productAmount<1300){alert("COD minimum product amount is ₹1,300.");return}
   if(cod&&c.total<COD_ADVANCE){alert("COD Grand Total कम से कम ₹500 होना चाहिए।");return}
   const b=$("deliveryBox"),payment=cod
     ?`Main Product Amount: ${money(c.productAmount)}\nChargeable Weight: ${c.kg} KG\nCOD Courier Charges: ${money(c.courierCharge)} (₹299/KG)\nGrand Total: ${money(c.total)}\nAdvance Paid: ${money(c.advance)}\nRest on Delivery: ${money(c.rest)}`
