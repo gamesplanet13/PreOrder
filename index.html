@@ -42,7 +42,7 @@ button:hover{filter:brightness(.96)}
       <input id="altmobile" inputmode="tel" placeholder="Alt Mobile">
       <input id="email" type="email" placeholder="Email">
     </div>
-    <textarea id="address" placeholder="Full Address *"></textarea>
+    <textarea id="address" placeholder="Full Address *"></textarea><input id="house" placeholder="House number (optional; blank = Rural)"><label for="areaType">Delivery Area</label><select id="areaType"><option value="auto">Auto (address)</option><option value="rural">Rural</option><option value="urban">Urban (requires house number)</option></select><div id="ruralNote" class="note">Rural: prepaid only, Post Office ₹100 or Speed Post ₹200.</div>
     <input id="landmark" placeholder="Landmark">
   </section>
 
@@ -152,10 +152,12 @@ function applyPincode(){
   }
 }
 function type(){return document.querySelector('input[name="orderType"]:checked').value}
+function gpRural(){let house=document.getElementById('house').value.trim(),a=document.getElementById('areaType').value;if(!house||a==='rural')return true;if(a==='urban')return false;return /village|rural|gaon|गांव|गाँव/i.test(document.getElementById('address').value)}
+function gpPostage(){return gpRural()?(document.getElementById('courier').value==='Speed Post'?200:100):0}
 function calculation(){
   const productAmount=Math.max(0,Number(val("amount"))||0),weight=Math.max(0,Number(val("weight"))||0);
-  const kg=type()==="COD"&&weight>0?Math.ceil(weight):0,courierCharge=type()==="COD"?kg*COD_RATE:0,total=productAmount+courierCharge;
-  return{productAmount,weight,kg,courierCharge,total,advance:type()==="COD"?COD_ADVANCE:total,rest:type()==="COD"?Math.max(0,total-COD_ADVANCE):0};
+  const kg=type()==="COD"&&weight>0?Math.ceil(weight):0,courierCharge=type()==="COD"?kg*COD_RATE:0,postalCharge=type()==="COD"?0:gpPostage(),total=productAmount+courierCharge+postalCharge;
+  return{productAmount,weight,kg,courierCharge,postalCharge,total,advance:type()==="COD"?COD_ADVANCE:total,rest:type()==="COD"?Math.max(0,total-COD_ADVANCE):0};
 }
 function updateDelivery(){
   const b=$("deliveryBox"),cod=type()==="COD";
@@ -163,6 +165,7 @@ function updateDelivery(){
   b.innerHTML="📏 Distance: <b>"+b.dataset.distance+"</b><br>⏳ "+type()+" ETA: <b>"+(cod?b.dataset.codEta:b.dataset.preEta)+"</b><br>📅 Estimated Delivery: <b>"+(cod?b.dataset.codRange:b.dataset.preRange)+"</b>";
 }
 function updatePayment(){
+  const rural=gpRural(),codInput=document.querySelector('input[name="orderType"][value="COD"]');codInput.disabled=rural;codInput.parentElement.style.display=rural?"none":"";if(rural&&codInput.checked)document.querySelector('input[name="orderType"][value="Prepaid"]').checked=true;
   const c=calculation(),cod=type()==="COD";$("weight").disabled=!cod;
   if(cod){
     $("courier").innerHTML='<option value="Delhivery COD">Delhivery COD</option>';$("courier").disabled=true;
@@ -170,13 +173,14 @@ function updatePayment(){
     $("paymentPreview").innerHTML="Product Amount: <b>"+money(c.productAmount)+"</b><br>Chargeable Weight: <b>"+c.kg+" KG</b><br>Courier: <b>"+money(c.courierCharge)+"</b><br>Grand Total: <b>"+money(c.total)+"</b><br>Advance Paid: <b>"+money(c.advance)+"</b><br>Rest on Delivery: <b>"+money(c.rest)+"</b>";
   }else{
     const selected=$("courier").dataset.lastPrepaid||"Trackon.in";$("courier").disabled=false;
-    $("courier").innerHTML=["Trackon.in","ShreeMaruti.com","DTDC.in","Blue Dart","Ecom","Delhivery"].map(x=>'<option'+(x===selected?' selected':'')+'>'+x+'</option>').join("");
+    $("courier").innerHTML=(rural?["Post Office","Speed Post"]:["Trackon.in","ShreeMaruti.com","DTDC.in","Blue Dart","Ecom","Delhivery"]).map(x=>'<option'+(x===selected?' selected':'')+'>'+x+'</option>').join("");
     $("paymentNote").textContent="Prepaid में entered Main / Product Amount ही Amount Paid रहेगा।";
-    $("paymentPreview").innerHTML="Amount Paid: <b>"+money(c.productAmount)+"</b>";
+    $("paymentPreview").innerHTML=(rural?"Postal Charges: "+money(c.postalCharge)+"<br>":"")+"Amount Paid: <b>"+money(c.total)+"</b>";
   }
   updateDelivery();
 }
 function submitOrder(){
+  updatePayment();if(gpRural()&&type()==="COD"){alert("Rural orders must be prepaid.");return;}
   const pin=val("pincode"),po=val("postofficeManual")||val("postofficeSelect"),c=calculation(),qty=Math.max(1,parseInt(val("quantity"),10)||1),cod=type()==="COD";
   if(!val("name")||!val("mobile")||!val("address")||pin.length!==6||!val("state")||!val("city")||!po||!val("product")||c.productAmount<=0){
     alert("Name, Mobile, Address, valid Pincode, State, City, Post Office, Product और Main Amount भरें।");return;
@@ -185,7 +189,7 @@ function submitOrder(){
   if(cod&&c.total<COD_ADVANCE){alert("COD Grand Total कम से कम ₹500 होना चाहिए।");return}
   const b=$("deliveryBox"),payment=cod
     ?`Main Product Amount: ${money(c.productAmount)}\nChargeable Weight: ${c.kg} KG\nCOD Courier Charges: ${money(c.courierCharge)} (₹299/KG)\nGrand Total: ${money(c.total)}\nAdvance Paid: ${money(c.advance)}\nRest on Delivery: ${money(c.rest)}`
-    :`Main Product Amount: ${money(c.productAmount)}\nDiscount: ₹0\nAmount Paid: ${money(c.productAmount)}`;
+    :`Main Product Amount: ${money(c.productAmount)}\nPostal Charges: ${money(c.postalCharge)}\nDiscount: ₹0\nAmount Paid: ${money(c.total)}`;
   const msg=`${cod?"🔴 COD":"🟢 Prepaid"} Order on WhatsApp
 
 Order ID: ${orderID()}
@@ -193,7 +197,8 @@ Name: ${val("name")}
 Mobile: ${val("mobile")}
 Alt Mobile: ${val("altmobile")}
 Email: ${val("email")}
-Address: ${val("address")}
+Address: ${val("house")?val("house")+", ":""}${val("address")}
+Delivery Area: ${gpRural()?"Rural":"Urban"}
 Landmark: ${val("landmark")}
 Pincode: ${pin}
 State: ${val("state")}
@@ -209,13 +214,13 @@ Courier Company: ${val("courier")}
 📏 Distance: ${b.dataset.distance||"N/A"}
 ⏳ ${type()} Order ETA: ${cod?(b.dataset.codEta||"7–11 days"):(b.dataset.preEta||"5–8 days")}
 📅 Estimated Delivery: ${cod?(b.dataset.codRange||"Standard Delivery"):(b.dataset.preRange||"Standard Delivery")}`;
-  GPOrderRecords.send(msg,{items:[{name:val("product"),product:val("product"),variant:val("variant"),quantity:qty,unitPrice:c.productAmount/qty,lineTotal:c.productAmount,unitWeight:c.weight*1000/qty,lineWeight:c.weight*1000,dimensions:[]}],productTotal:c.productAmount,courierCharge:c.courierCharge,grandTotal:c.total,advanceAmount:c.advance,restAmount:c.rest,paymentMode:cod?"cod":"prepaid",gstInvoiceIncluded:false,delivery:{distance:b.dataset.distance,eta:cod?b.dataset.codEta:b.dataset.preEta,estimatedDelivery:cod?b.dataset.codRange:b.dataset.preRange}});
+  GPOrderRecords.send(msg,{items:[{name:val("product"),product:val("product"),variant:val("variant"),quantity:qty,unitPrice:c.productAmount/qty,lineTotal:c.productAmount,unitWeight:c.weight*1000/qty,lineWeight:c.weight*1000,dimensions:[]}],productTotal:c.productAmount,courierCharge:c.courierCharge+c.postalCharge,deliveryArea:gpRural()?"Rural":"Urban",courier:val("courier"),grandTotal:c.total,advanceAmount:c.advance,restAmount:c.rest,paymentMode:cod?"cod":"prepaid",gstInvoiceIncluded:false,delivery:{distance:b.dataset.distance,eta:cod?b.dataset.codEta:b.dataset.preEta,estimatedDelivery:cod?b.dataset.codRange:b.dataset.preRange}});
 }
 $("pincode").addEventListener("input",applyPincode);
 $("postofficeSelect").addEventListener("change",()=>{if(val("postofficeSelect"))$("postofficeManual").value=val("postofficeSelect")});
 document.querySelectorAll('input[name="orderType"]').forEach(x=>x.addEventListener("change",updatePayment));
 $("amount").addEventListener("input",updatePayment);$("weight").addEventListener("input",updatePayment);
-$("courier").addEventListener("change",()=>{$("courier").dataset.lastPrepaid=val("courier")});
+$("courier").addEventListener("change",()=>{$("courier").dataset.lastPrepaid=val("courier");updatePayment()});["house","areaType","address"].forEach(id=>$(id).addEventListener(id==="areaType"?"change":"input",updatePayment));
 $("submitButton").addEventListener("click",submitOrder);
 updatePayment();
 </script>
