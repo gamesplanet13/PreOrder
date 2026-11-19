@@ -255,5 +255,7 @@ updatePayment();
   const field=document.getElementById(id);
   if(field)for(const event of ['input','change'])field.addEventListener(event,()=>{updatePayment();});
  });
-});</script></body>
+});</script><script>for(const kind of ['input','change'])document.addEventListener(kind,event=>{
+ if(['pincode','city','district','address','postoffice','postOffice','postofficeSelect','postofficeManual'].includes(event.target.id))queueMicrotask(()=>{updatePayment();});
+},true);</script></body>
 </html>
